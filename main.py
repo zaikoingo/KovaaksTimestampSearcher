@@ -8,6 +8,9 @@ def get_score_data(username, scenario_name):
     raw_score_data = requests.get(f'https://kovaaks.com/webapp-backend/user/scenario/last-scores/by-name?username={username}&scenarioName={scenario_name}').json()
     score_data = []
     personal_best = {"score": -99999}
+    if ('error' in raw_score_data):
+        return None
+
     for score in raw_score_data:
         epoch = int(score['attributes']['epoch'])
         challengeStart = score['attributes']['challengeStart'].split(':')
@@ -51,23 +54,51 @@ def get_score_data(username, scenario_name):
         "suspicous_flag": False
     }
 
-    if (personal_best['delta'] > DELTA_FLAG + 60):
+    if (personal_best['delta'] > DELTA_FLAG + 60) and SUSPICOUS_SCORE_FLAG:
         scenario_data['suspicous_flag'] = True
 
     return scenario_data
 
 
+def find_flagged_runs(collected_data):
+    flagged_runs = []
+
+    for scenario in collected_data:
+        if scenario != None:
+            if scenario['suspicous_flag']:
+                flagged_runs.append(scenario)
+
+    return flagged_runs
+
+
+def filter_results(collected_data):
 
 
 def get_url():
     print("Enter profile name to scan:")
-    url = input()
-    response = requests.get(url)
-    if (response.status_code == 200):
-        print("Profile URL OK")
-        get_score_data('Zaiko', 'VT Pasu Rasp Novice')
-    else:
-        print("ERROR: Not successful")
+    username = input()
+    page = 0
+    access_failed = False
+    collected_data = []
+
+    while access_failed == False and page < 5:
+        url = f'https://kovaaks.com/webapp-backend/user/scenario/total-play?username={username}&page={page}&max=10&sort_param[]=count'
+        response = requests.get(url)
+
+        if (response.status_code == 200):
+            scenarios = response.json()['data']
+            for scenario in scenarios:
+                collected_data.append(get_score_data(username, scenario['scenarioName']))
+                print(scenario['scenarioName'])
+            page += 1
+
+        else:
+            if page == 0:
+                print("ERROR: Not successful")
+            access_failed = True
+
+    if page != 0:
+        filter_results(collected_data)
 
 if __name__ == '__main__':
     get_score_data('Zaiko', 'VT 1w4ts Novice S5')
