@@ -109,12 +109,27 @@ def filter_results(collected_data):
             print(f"\t\t{score}")
 
 
-def get_playlist_scenarios():
+def get_playlist_scenarios(playlist_name):
+    url = f'https://kovaaks.com/webapp-backend/playlist/playlists?page=0&max=20&search={playlist_name}'
+    raw_scenario_data = requests.get(url).json()
+    print(raw_scenario_data)
+    scenario_titles = []
+    scenario_list = raw_scenario_data['data']['scenarioList']
+    for scenario in scenario_list:
+        scenario_titles.append(scenario['scenarioName'])
 
+    return scenario_titles
 
-def get_url():
-    print("Enter profile name to scan:")
-    username = input()
+def get_user_playlist_scenarios(username, playlist_name):
+    collected_data = []
+    scenario_titles = get_playlist_scenarios(playlist_name)
+    for scenario in scenario_titles:
+        collected_data.append(get_score_data(username, scenario))
+        print(scenario['scenarioName'])
+
+    return collected_data
+
+def get_user_scenarios(username):
     page = 0
     access_failed = False
     collected_data = []
@@ -133,11 +148,35 @@ def get_url():
         else:
             if page == 0:
                 print("ERROR: Not successful")
+                return None
             access_failed = True
+    return collected_data
 
-    if page != 0:
-        filter_results(collected_data)
+
+def prompt():
+    print("Enter profile name to scan:")
+    username = input()
+    collected_data = []
+
+    print("Which option would you like to scan?")
+    print("\t1. - Scan by username")
+    print("\t2. - Scan by profile")
+
+    valid_input = False
+    while not valid_input:
+        user_choice = input()
+        if user_choice == '1':
+            collected_data = get_user_scenarios(username)
+            valid_input = True
+        elif user_choice == '2':
+            print("Enter playlist name:")
+            playlist_name = input()
+            collected_data = get_user_playlist_scenarios(username, playlist_name)
+            valid_input = True
+        else:
+            print("Invalid input, try again")
+
+    filter_results(collected_data)
 
 if __name__ == '__main__':
-
-    #get_url()
+    prompt()
