@@ -161,7 +161,7 @@ def prompt():
 
     print("Which option would you like to scan?")
     print("\t1. - Scan by username")
-    print("\t2. - Scan by profile")
+    print("\t2. - Scan by playlist")
 
     valid_input = False
     while not valid_input:
