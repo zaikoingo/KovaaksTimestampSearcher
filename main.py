@@ -89,8 +89,6 @@ def date_filter(date, runs):
 def filter_results(collected_data):
     to_print = collected_data
 
-    to_print = date_filter("3/25/2026", to_print)
-
     if SUSPICOUS_SCORE_FLAG:
         to_print = find_flagged_runs(to_print)
 
@@ -99,7 +97,7 @@ def filter_results(collected_data):
         score_data = scenario['scores']
         scenario_name = scenario['scenario_name']
 
-        if (scenario['suspicous_flag']) :
+        if (scenario['suspicous_flag']):
             print(f"!! (Flagged) {scenario_name} !!")
         else:
             print(scenario_name)
@@ -114,9 +112,12 @@ def get_playlist_scenarios(playlist_name):
     raw_scenario_data = requests.get(url).json()
     print(raw_scenario_data)
     scenario_titles = []
-    scenario_list = raw_scenario_data['data']['scenarioList']
+    scenario_list = raw_scenario_data['data'][0]['scenarioList']
+    print(scenario_list)
     for scenario in scenario_list:
         scenario_titles.append(scenario['scenarioName'])
+
+    print(scenario_titles)
 
     return scenario_titles
 
@@ -125,7 +126,7 @@ def get_user_playlist_scenarios(username, playlist_name):
     scenario_titles = get_playlist_scenarios(playlist_name)
     for scenario in scenario_titles:
         collected_data.append(get_score_data(username, scenario))
-        print(scenario['scenarioName'])
+        print(scenario)
 
     return collected_data
 
