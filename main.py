@@ -1,8 +1,8 @@
 import requests
 from datetime import datetime
 
-DELTA_FLAG = 5
-SUSPICOUS_SCORE_FLAG = True
+DELTA_FLAG = 4
+SUSPICOUS_SCORE_FLAG = False
 
 def get_score_data(username, scenario_name):
     raw_score_data = requests.get(f'https://kovaaks.com/webapp-backend/user/scenario/last-scores/by-name?username={username}&scenarioName={scenario_name}').json()
@@ -49,12 +49,16 @@ def get_score_data(username, scenario_name):
             personal_best = parsed_score
 
     scenario_data = {
+        "scenario_name": scenario_name,
         "scores": score_data,
         "personal_best": personal_best,
         "suspicous_flag": False
     }
 
-    if (personal_best['delta'] > DELTA_FLAG + 60) and SUSPICOUS_SCORE_FLAG:
+    if (not 'delta' in personal_best):
+        return None
+
+    if (personal_best['delta'] > DELTA_FLAG + 60):
         scenario_data['suspicous_flag'] = True
 
     return scenario_data
@@ -71,7 +75,41 @@ def find_flagged_runs(collected_data):
     return flagged_runs
 
 
+def date_filter(date, runs):
+    collected_runs = []
+
+    for scenario in runs:
+        if scenario != None:
+            if scenario['personal_best']['date'] == date:
+                collected_runs.append(scenario)
+
+    return collected_runs
+
+
 def filter_results(collected_data):
+    to_print = collected_data
+
+    to_print = date_filter("3/25/2026", to_print)
+
+    if SUSPICOUS_SCORE_FLAG:
+        to_print = find_flagged_runs(to_print)
+
+    for scenario in to_print:
+        personal_best = scenario['personal_best']
+        score_data = scenario['scores']
+        scenario_name = scenario['scenario_name']
+
+        if (scenario['suspicous_flag']) :
+            print(f"!! (Flagged) {scenario_name} !!")
+        else:
+            print(scenario_name)
+
+        print(f"\t{personal_best}")
+        for score in score_data:
+            print(f"\t\t{score}")
+
+
+def get_playlist_scenarios():
 
 
 def get_url():
@@ -81,7 +119,7 @@ def get_url():
     access_failed = False
     collected_data = []
 
-    while access_failed == False and page < 5:
+    while access_failed == False and page < 50:
         url = f'https://kovaaks.com/webapp-backend/user/scenario/total-play?username={username}&page={page}&max=10&sort_param[]=count'
         response = requests.get(url)
 
@@ -101,5 +139,5 @@ def get_url():
         filter_results(collected_data)
 
 if __name__ == '__main__':
-    get_score_data('Zaiko', 'VT 1w4ts Novice S5')
-    get_url()
+
+    #get_url()
